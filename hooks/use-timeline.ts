@@ -11,16 +11,24 @@ export function useTimeline(projectStartDate: Date, projectEndDate: Date) {
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null)
   const [isWheeling, setIsWheeling] = useState(false)
 
-  // Boundary break state
-  const [boundaryBreakProgress, setBoundaryBreakProgress] = useState(0)
-  const [boundaryHoldDirection, setBoundaryHoldDirection] = useState<"up" | "down" | null>(null)
+  const [verticalScrollOffset, setVerticalScrollOffset] = useState(0)
+  const [isVerticalScrolling, setIsVerticalScrolling] = useState(false)
+
+  const [minuteOffset, setMinuteOffset] = useState(0) // 0-59 minutes within current hour
+  const [isInMinuteMode, setIsInMinuteMode] = useState(false)
+  const [minuteZoomLevel, setMinuteZoomLevel] = useState(1) // 1 = minutes, 2 = seconds
+
+  const [granularZoom, setGranularZoom] = useState(1) // 1-5 for hour layer granular zoom
 
   const containerRef = useRef<HTMLDivElement>(null)
   const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const verticalScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Internal hold refs
   const holdRaf = useRef<number | null>(null)
   const holdStartAt = useRef<number | null>(null)
+  const [boundaryHoldDirection, setBoundaryHoldDirection] = useState<"up" | "down" | null>(null)
+  const [boundaryBreakProgress, setBoundaryBreakProgress] = useState(0)
 
   const zoomLevel = ZOOM_LEVELS[Math.floor(zoom)]
 
@@ -54,6 +62,20 @@ export function useTimeline(projectStartDate: Date, projectEndDate: Date) {
     },
     [clampToProject],
   )
+
+  const handleVerticalScroll = useCallback((delta: number) => {
+    setIsVerticalScrolling(true)
+    setVerticalScrollOffset((prev) => {
+      // Clamp vertical scroll to reasonable bounds (-500 to 500px)
+      const newOffset = Math.max(-500, Math.min(500, prev + delta))
+      return newOffset
+    })
+
+    if (verticalScrollTimeoutRef.current) clearTimeout(verticalScrollTimeoutRef.current)
+    verticalScrollTimeoutRef.current = setTimeout(() => {
+      setIsVerticalScrolling(false)
+    }, 200)
+  }, [])
 
   // Hold-to-break controls
   const cancelBoundaryHold = useCallback(() => {
@@ -91,7 +113,111 @@ export function useTimeline(projectStartDate: Date, projectEndDate: Date) {
     [boundaryHoldDirection, cancelBoundaryHold],
   )
 
-  // Zoom controls (Ctrl + wheel), prevent page zoom
+  const detectTrackpad = useCallback((e: WheelEvent) => {
+    // Trackpads typically have smaller deltaY values and more frequent events
+    return Math.abs(e.deltaY) < 50 && e.deltaMode === 0
+  }, [])
+
+  const handleMinuteScroll = useCallback(
+    (delta: number) => {
+      if (zoomLevel !== "hour") return false
+
+      const direction = delta > 0 ? 1 : -1
+      const newMinute = minuteOffset + direction
+
+      // Handle hour transitions
+      if (newMinute > 59) {
+        // Scrolling forward past 59 minutes - advance to next hour
+        const newFocusDate = new Date(focusDate)
+        newFocusDate.setHours(newFocusDate.getHours() + 1)
+        newFocusDate.setMinutes(0)
+
+        // Check if we're crossing day boundary (would need boundary breaking)
+        const currentDay = focusDate.getDate()
+        const newDay = newFocusDate.getDate()
+
+        if (newDay !== currentDay) {
+          // Crossing day boundary - stop here and let boundary breaking handle it
+          return true
+        }
+
+        setFocusDate(clampToProject(newFocusDate))
+        setMinuteOffset(0)
+      } else if (newMinute < 0) {
+        // Scrolling backward past 0 minutes - go back to previous hour
+        const newFocusDate = new Date(focusDate)
+        newFocusDate.setHours(newFocusDate.getHours() - 1)
+        newFocusDate.setMinutes(59)
+
+        // Check if we're crossing day boundary (would need boundary breaking)
+        const currentDay = focusDate.getDate()
+        const newDay = newFocusDate.getDate()
+
+        if (newDay !== currentDay) {
+          // Crossing day boundary - stop here and let boundary breaking handle it
+          return true
+        }
+
+        setFocusDate(clampToProject(newFocusDate))
+        setMinuteOffset(59)
+      } else {
+        // Normal minute scrolling within the same hour
+        const newFocusDate = new Date(focusDate)
+        newFocusDate.setMinutes(newMinute)
+        setFocusDate(clampToProject(newFocusDate))
+        setMinuteOffset(newMinute)
+      }
+
+      // Enter minute mode if not already
+      if (!isInMinuteMode) {
+        setIsInMinuteMode(true)
+      }
+
+      return true
+    },
+    [zoomLevel, focusDate, minuteOffset, clampToProject, isInMinuteMode],
+  )
+
+  const zoomIntoMinutes = useCallback(() => {
+    if (zoomLevel === "hour" && isInMinuteMode) {
+      setMinuteZoomLevel((prev) => Math.min(2, prev + 1))
+    }
+  }, [zoomLevel, isInMinuteMode])
+
+  const zoomOutOfMinutes = useCallback(() => {
+    if (minuteZoomLevel > 1) {
+      setMinuteZoomLevel((prev) => prev - 1)
+    } else if (isInMinuteMode) {
+      setIsInMinuteMode(false)
+      setMinuteOffset(0)
+    }
+  }, [minuteZoomLevel, isInMinuteMode])
+
+  const handleGranularZoom = useCallback(
+    (delta: number) => {
+      if (zoomLevel !== "hour") return false
+
+      const zoomDirection = delta < 0 ? 1 : -1
+
+      setGranularZoom((prev) => {
+        const newZoom = Math.max(1, Math.min(5, prev + zoomDirection))
+
+        if (newZoom <= 1 && zoomDirection < 0 && prev > 1) {
+          // Trigger zoom out to day layer when reaching minimum granular zoom
+          setTimeout(() => {
+            setZoom((z) => Math.max(MIN_ZOOM, z - 1))
+            setGranularZoom(1) // Reset granular zoom
+          }, 100)
+        }
+
+        return newZoom
+      })
+
+      return true
+    },
+    [zoomLevel],
+  )
+
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -104,18 +230,48 @@ export function useTimeline(projectStartDate: Date, projectEndDate: Date) {
         wheelTimeoutRef.current = setTimeout(() => setIsWheeling(false), 200)
 
         const dir = e.deltaY < 0 ? 1 : -1
+        const isTrackpad = detectTrackpad(e)
+
+        if (isTrackpad && Math.abs(e.deltaY) < 10) return
+
+        if (zoomLevel === "hour" && handleGranularZoom(e.deltaY)) {
+          return
+        }
+
         if (dir > 0 && zoom < MAX_ZOOM) {
           setFocusDate((f) => (hoveredDate ? hoveredDate : f))
           setZoom((z) => Math.min(MAX_ZOOM, z + 1))
+          setGranularZoom(1)
         } else if (dir < 0 && zoom > MIN_ZOOM) {
           setZoom((z) => Math.max(MIN_ZOOM, z - 1))
+          setGranularZoom(1)
         }
+      } else if (e.altKey) {
+        // ALT + Scroll for vertical scrolling within units
+        e.preventDefault()
+        const delta = e.deltaY * 0.5 // Smooth scrolling
+        handleVerticalScroll(delta)
+      } else if (e.shiftKey) {
+        // Shift + Scroll for minute scrolling within units
+        e.preventDefault()
+        e.stopPropagation() // Prevent event bubbling
+        const delta = e.deltaY
+        console.log("[v0] Shift + Scroll detected, delta:", delta, "granularZoom before:", granularZoom)
+
+        // Only handle minute scrolling, explicitly prevent any zoom changes
+        if (zoomLevel === "hour") {
+          const handled = handleMinuteScroll(delta)
+          console.log("[v0] Minute scroll handled:", handled, "granularZoom after:", granularZoom)
+        }
+
+        // Explicitly return early to prevent any other processing
+        return
       }
     }
 
     el.addEventListener("wheel", onWheel, { passive: false })
     return () => el.removeEventListener("wheel", onWheel)
-  }, [zoom, hoveredDate])
+  }, [zoom, hoveredDate, detectTrackpad, handleVerticalScroll, handleMinuteScroll, zoomLevel, handleGranularZoom])
 
   return {
     // state
@@ -128,6 +284,15 @@ export function useTimeline(projectStartDate: Date, projectEndDate: Date) {
     projectStartDate,
     projectEndDate,
 
+    verticalScrollOffset,
+    isVerticalScrolling,
+
+    minuteOffset,
+    isInMinuteMode,
+    minuteZoomLevel,
+
+    granularZoom,
+
     // boundary-break visuals
     boundaryBreakProgress,
     boundaryHoldDirection,
@@ -137,5 +302,11 @@ export function useTimeline(projectStartDate: Date, projectEndDate: Date) {
     beginBoundaryHold,
     cancelBoundaryHold,
     zoomInTo,
+    handleVerticalScroll,
+
+    handleMinuteScroll,
+    zoomIntoMinutes,
+    zoomOutOfMinutes,
+    handleGranularZoom,
   }
 }

@@ -22,11 +22,9 @@ export function YearLayer(props: YearLayerProps) {
           props.changeFocus(items[nextIdx])
           return true
         }
-        // year layer: if out of project bounds, ignore (project scope is hard bound)
         return false
       }}
       onBoundaryBreak={(dir) => {
-        // No-op for year; project scope is the top bound
         const delta = dir === "down" ? 1 : -1
         const nextIdx = focusIdx + delta
         if (nextIdx >= 0 && nextIdx < items.length) {

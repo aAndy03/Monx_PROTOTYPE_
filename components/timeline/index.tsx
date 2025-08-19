@@ -2,13 +2,13 @@
 
 import { AnimatePresence, motion } from "framer-motion"
 import { useTimeline } from "@/hooks/use-timeline"
-import { format } from "date-fns"
-import { BoundaryBreakIndicator } from "./boundary-break-indicator"
 import { YearLayer } from "./layers/year-layer"
 import { MonthLayer } from "./layers/month-layer"
 import { WeekLayer } from "./layers/week-layer"
 import { DayLayer } from "./layers/day-layer"
 import { HourLayer } from "./layers/hour-layer"
+import { TimelineNavbar } from "./timeline-navbar"
+import { RealTimeClock } from "./real-time-clock"
 
 interface TimelineProps {
   projectStartDate: Date
@@ -19,17 +19,23 @@ export function Timeline({ projectStartDate, projectEndDate }: TimelineProps) {
   const timeline = useTimeline(projectStartDate, projectEndDate)
 
   const renderLayer = () => {
+    const layerProps = {
+      ...timeline,
+      verticalScrollOffset: timeline.verticalScrollOffset,
+      isVerticalScrolling: timeline.isVerticalScrolling,
+    }
+
     switch (timeline.zoomLevel) {
       case "year":
-        return <YearLayer key="year" {...timeline} />
+        return <YearLayer key="year" {...layerProps} />
       case "month":
-        return <MonthLayer key="month" {...timeline} />
+        return <MonthLayer key="month" {...layerProps} />
       case "week":
-        return <WeekLayer key="week" {...timeline} />
+        return <WeekLayer key="week" {...layerProps} />
       case "day":
-        return <DayLayer key="day" {...timeline} />
+        return <DayLayer key="day" {...layerProps} />
       case "hour":
-        return <HourLayer key="hour" {...timeline} />
+        return <HourLayer key="hour" {...layerProps} />
       default:
         return null
     }
@@ -40,7 +46,13 @@ export function Timeline({ projectStartDate, projectEndDate }: TimelineProps) {
       ref={timeline.containerRef}
       className="w-full h-full flex items-center justify-center select-none cursor-grab active:cursor-grabbing overflow-hidden"
     >
-      <div className="w-full h-full relative flex items-center justify-center perspective-1000">
+      <div
+        className="w-full h-full relative flex items-center justify-center perspective-1000 pt-20"
+        style={{
+          transform: `translateY(${timeline.verticalScrollOffset}px)`,
+          transition: timeline.isVerticalScrolling ? "none" : "transform 0.3s ease-out",
+        }}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={timeline.zoomLevel}
@@ -55,18 +67,25 @@ export function Timeline({ projectStartDate, projectEndDate }: TimelineProps) {
         </AnimatePresence>
       </div>
 
-      <div className="absolute top-4 right-4 flex flex-col items-end gap-4 pointer-events-none">
-        <BoundaryBreakIndicator progress={timeline.boundaryBreakProgress} />
-        <div className="bg-card p-2 rounded-lg shadow-lg text-xs text-muted-foreground">
-          <p>Zoom: {timeline.zoom.toFixed(2)}</p>
-          <p>Level: {timeline.zoomLevel}</p>
-          <p>Date: {format(timeline.focusDate, "yyyy-MM-dd HH:mm")}</p>
-        </div>
-      </div>
+      <TimelineNavbar
+        focusDate={timeline.focusDate}
+        zoomLevel={timeline.zoomLevel}
+        onDateChange={timeline.changeFocus}
+        projectStartDate={projectStartDate}
+        projectEndDate={projectEndDate}
+        isInMinuteMode={timeline.isInMinuteMode}
+        minuteZoomLevel={timeline.minuteZoomLevel}
+        minuteOffset={timeline.minuteOffset}
+      />
+
+      <RealTimeClock />
 
       <div className="absolute bottom-4 left-4 text-xs text-muted-foreground pointer-events-none">
         <p>Ctrl + Scroll to Zoom</p>
         <p>Scroll to Navigate Time</p>
+        <p>Alt + Scroll to View Content</p>
+        <p>Shift + Scroll for Minutes (Hour layer only)</p>
+        <p>T to Add Transaction (Hour layer only)</p>
         <p>Drag and hold at an edge for 2s to break boundaries</p>
       </div>
     </div>

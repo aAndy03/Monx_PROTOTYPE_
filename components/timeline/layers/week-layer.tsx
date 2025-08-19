@@ -10,10 +10,7 @@ import { cn } from "@/lib/utils"
 type WeekLayerProps = ReturnType<typeof useTimeline>
 
 export function WeekLayer(props: WeekLayerProps) {
-  // Anchor weeks to a stable month context so cross-weeks don't re-anchor unexpectedly.
   const [monthContext, setMonthContext] = useState(startOfMonth(props.focusDate))
-
-  // Fixed week list for the anchored month
   const items = useMemo(() => getWeekItems(monthContext), [monthContext])
   const focusIdx = useMemo(() => items.findIndex((d) => sameUnit("week", d, props.focusDate)), [items, props.focusDate])
 
@@ -31,7 +28,6 @@ export function WeekLayer(props: WeekLayerProps) {
         return false
       }}
       onBoundaryBreak={(dir) => {
-        // Move month context, then snap to the first/last week of new month deterministically
         if (dir === "down") {
           const nextMonth = addMonths(monthContext, 1)
           setMonthContext(nextMonth)
@@ -45,7 +41,6 @@ export function WeekLayer(props: WeekLayerProps) {
       onZoomIn={props.zoomInTo}
       boundaryBreakProgress={props.boundaryBreakProgress}
       boundaryHoldDirection={props.boundaryHoldDirection}
-      // Custom renderer adds day strip and cross-week visuals
       renderItem={({ date, index, isCenter, distance, defaultNode }) => {
         const days = getDayItems(date)
         const isCross = days.some((d) => !isSameMonth(d, monthContext))
@@ -58,7 +53,6 @@ export function WeekLayer(props: WeekLayerProps) {
             )}
           >
             {defaultNode}
-            {/* Day strip */}
             <div className="mt-2 flex gap-1 justify-center">
               {days.map((d) => {
                 const outside = !isSameMonth(d, monthContext)

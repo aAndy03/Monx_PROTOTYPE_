@@ -15,7 +15,7 @@ export function MonthLayer(props: MonthLayerProps) {
     <Abstract
       {...props}
       items={items}
-      itemFormat="LLLL"
+      itemFormat="LLL"
       onScrollStep={(delta) => {
         const nextIdx = focusIdx + delta
         if (nextIdx >= 0 && nextIdx < items.length) {
