@@ -78,6 +78,10 @@ export function AbstractLayer({
   const [flashSide, setFlashSide] = useState<"left" | "right" | null>(null)
   const [viewportWidth, setViewportWidth] = useState(0)
 
+  const prevGranularZoomRef = useRef(granularZoom)
+  const isZoomTransitionRef = useRef(false)
+  const zoomTransitionTimeoutRef = useRef<NodeJS.Timeout>()
+
   useEffect(() => {
     const updateViewport = () => {
       setViewportWidth(window.innerWidth)
@@ -90,18 +94,24 @@ export function AbstractLayer({
 
   const focusIndex = useMemo(() => {
     const normalizedFocus = normalizeToLevel(zoomLevel, focusDate)
-    const idx = items.findIndex((d) => sameUnit(zoomLevel, d, normalizedFocus))
 
-    if (idx >= 0) return idx
+    // First try to find exact match
+    const exactIdx = items.findIndex((d) => sameUnit(zoomLevel, d, normalizedFocus))
+    if (exactIdx >= 0) return exactIdx
 
-    // For hour layer, use the hour value as fallback
-    if (zoomLevel === "hour") {
-      const targetHour = normalizedFocus.getHours()
-      return Math.min(Math.max(0, targetHour), items.length - 1)
+    // If no exact match, find the closest item based on the focus date, not current time
+    let closestIdx = 0
+    let closestDistance = Math.abs(items[0]?.getTime() - normalizedFocus.getTime())
+
+    for (let i = 1; i < items.length; i++) {
+      const distance = Math.abs(items[i].getTime() - normalizedFocus.getTime())
+      if (distance < closestDistance) {
+        closestDistance = distance
+        closestIdx = i
+      }
     }
 
-    // For other layers, default to 0
-    return 0
+    return closestIdx
   }, [items, focusDate, zoomLevel])
 
   const getPreviewText = (direction: "up" | "down") => {
@@ -131,6 +141,23 @@ export function AbstractLayer({
 
   useEffect(() => {
     if (containerRef.current && viewportWidth > 0) {
+      const isGranularZoomChanging = prevGranularZoomRef.current !== granularZoom
+
+      if (isGranularZoomChanging) {
+        isZoomTransitionRef.current = true
+        prevGranularZoomRef.current = granularZoom
+
+        // Clear any existing timeout
+        if (zoomTransitionTimeoutRef.current) {
+          clearTimeout(zoomTransitionTimeoutRef.current)
+        }
+
+        // Mark transition as complete after a short delay
+        zoomTransitionTimeoutRef.current = setTimeout(() => {
+          isZoomTransitionRef.current = false
+        }, 100)
+      }
+
       // Use viewport width for accurate centering
       const width = viewportWidth
       const baseItemWidth = Math.min(320, Math.max(200, width / 5))
@@ -154,9 +181,21 @@ export function AbstractLayer({
       // Position the container so the focused item (with minute adjustment) is at viewport center
       const targetX = viewportCenter - focusedItemCenter - minuteAdjustment
 
-      x.set(targetX)
+      if (isZoomTransitionRef.current) {
+        x.set(targetX)
+      } else {
+        x.set(targetX)
+      }
     }
-  }, [focusIndex, items.length, x, zoomLevel, granularZoom, viewportWidth, itemWidth, focusDate]) // Added focusDate to dependencies
+  }, [focusIndex, items.length, x, zoomLevel, granularZoom, viewportWidth, itemWidth, focusDate])
+
+  useEffect(() => {
+    return () => {
+      if (zoomTransitionTimeoutRef.current) {
+        clearTimeout(zoomTransitionTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const el = containerRef.current
@@ -235,7 +274,16 @@ export function AbstractLayer({
                 width: `${finalItemWidth}px`, // Use finalItemWidth instead of itemWidth variable
                 minWidth: "200px",
               }}
-              onClick={() => onZoomIn(item)}
+              onClick={() => {
+                // For hour layer, check if we're in minute mode and prevent zoom-in
+                if (zoomLevel === "hour") {
+                  // Don't trigger zoom-in when clicking on timeline items in hour layer
+                  // This preserves minute focus and only allows scroll gestures to change focus
+                  return
+                }
+                // For other layers, preserve the original click-to-zoom behavior
+                onZoomIn(item)
+              }}
             >
               {node}
             </div>

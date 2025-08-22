@@ -10,17 +10,26 @@ import { HourLayer } from "./layers/hour-layer"
 import { TimelineNavbar } from "./timeline-navbar"
 import { RealTimeClock } from "./real-time-clock"
 
-interface TimelineProps {
-  projectStartDate: Date
-  projectEndDate: Date
+interface Project {
+  id: string
+  name: string
+  description: string | null
 }
 
-export function Timeline({ projectStartDate, projectEndDate }: TimelineProps) {
+interface TimelineProps {
+  projectId?: string
+  projectStartDate: Date
+  projectEndDate: Date
+  project?: Project
+}
+
+export function Timeline({ projectId, projectStartDate, projectEndDate, project }: TimelineProps) {
   const timeline = useTimeline(projectStartDate, projectEndDate)
 
   const renderLayer = () => {
     const layerProps = {
       ...timeline,
+      projectId,
       verticalScrollOffset: timeline.verticalScrollOffset,
       isVerticalScrolling: timeline.isVerticalScrolling,
     }
@@ -76,6 +85,7 @@ export function Timeline({ projectStartDate, projectEndDate }: TimelineProps) {
         isInMinuteMode={timeline.isInMinuteMode}
         minuteZoomLevel={timeline.minuteZoomLevel}
         minuteOffset={timeline.minuteOffset}
+        project={project}
       />
 
       <RealTimeClock />

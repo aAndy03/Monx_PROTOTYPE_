@@ -7,7 +7,12 @@ const HOLD_TO_BREAK_MS = 2000
 
 export function useTimeline(projectStartDate: Date, projectEndDate: Date) {
   const [zoom, setZoom] = useState(0)
-  const [focusDate, setFocusDate] = useState(new Date())
+  const [focusDate, setFocusDate] = useState(() => {
+    // Start at project start date, not current time
+    const startDate = new Date(projectStartDate)
+    startDate.setHours(0, 0, 0, 0) // Start at beginning of day
+    return startDate
+  })
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null)
   const [isWheeling, setIsWheeling] = useState(false)
 
@@ -250,7 +255,7 @@ export function useTimeline(projectStartDate: Date, projectEndDate: Date) {
         // ALT + Scroll for vertical scrolling within units
         e.preventDefault()
         const delta = e.deltaY * 0.5 // Smooth scrolling
-        handleVerticalScroll(delta)
+        handleVerticalScroll(-delta)
       } else if (e.shiftKey) {
         // Shift + Scroll for minute scrolling within units
         e.preventDefault()

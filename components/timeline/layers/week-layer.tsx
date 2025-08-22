@@ -10,9 +10,8 @@ import { cn } from "@/lib/utils"
 type WeekLayerProps = ReturnType<typeof useTimeline>
 
 export function WeekLayer(props: WeekLayerProps) {
-  const [monthContext, setMonthContext] = useState(startOfMonth(props.focusDate))
+  const [monthContext, setMonthContext] = useState(() => startOfMonth(props.focusDate))
   const items = useMemo(() => getWeekItems(monthContext), [monthContext])
-  const focusIdx = useMemo(() => items.findIndex((d) => sameUnit("week", d, props.focusDate)), [items, props.focusDate])
 
   return (
     <Abstract
@@ -20,7 +19,10 @@ export function WeekLayer(props: WeekLayerProps) {
       items={items}
       itemFormat={"'Week' w"}
       onScrollStep={(delta) => {
-        const nextIdx = focusIdx + delta
+        const currentIdx = items.findIndex((d) => sameUnit("week", d, props.focusDate))
+        const safeIdx = currentIdx >= 0 ? currentIdx : 0
+        const nextIdx = safeIdx + delta
+
         if (nextIdx >= 0 && nextIdx < items.length) {
           props.changeFocus(items[nextIdx])
           return true

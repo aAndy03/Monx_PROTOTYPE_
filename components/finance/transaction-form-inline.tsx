@@ -57,9 +57,9 @@ export function TransactionFormInline({ initialDate, onTransactionCreated, onCan
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 w-80 mx-auto mt-8">
+    <div className="bg-white rounded-lg border border-gray-200 p-6 w-80 mx-auto mt-8 border-none shadow-none">
       <div className="flex items-center gap-2 mb-4">
-        <DollarSign className="h-5 w-5 text-green-600" />
+        
         <h3 className="text-lg font-semibold text-gray-900">Add Transaction</h3>
       </div>
 

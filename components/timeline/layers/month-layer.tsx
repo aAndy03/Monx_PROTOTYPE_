@@ -9,7 +9,6 @@ type MonthLayerProps = ReturnType<typeof useTimeline>
 
 export function MonthLayer(props: MonthLayerProps) {
   const items = getMonthItems(props.focusDate)
-  const focusIdx = items.findIndex((d) => sameUnit("month", d, props.focusDate))
 
   return (
     <Abstract
@@ -17,7 +16,11 @@ export function MonthLayer(props: MonthLayerProps) {
       items={items}
       itemFormat="LLL"
       onScrollStep={(delta) => {
-        const nextIdx = focusIdx + delta
+        const currentIdx = items.findIndex((d) => sameUnit("month", d, props.focusDate))
+        const safeIdx =
+          currentIdx >= 0 ? currentIdx : Math.min(Math.max(0, props.focusDate.getMonth()), items.length - 1)
+        const nextIdx = safeIdx + delta
+
         if (nextIdx >= 0 && nextIdx < items.length) {
           props.changeFocus(items[nextIdx])
           return true

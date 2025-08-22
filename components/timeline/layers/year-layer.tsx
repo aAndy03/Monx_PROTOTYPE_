@@ -9,7 +9,6 @@ type YearLayerProps = ReturnType<typeof useTimeline>
 
 export function YearLayer(props: YearLayerProps) {
   const items = getYearItems(props.projectStartDate, props.projectEndDate)
-  const focusIdx = items.findIndex((d) => sameUnit("year", d, props.focusDate))
 
   return (
     <Abstract
@@ -17,7 +16,10 @@ export function YearLayer(props: YearLayerProps) {
       items={items}
       itemFormat="yyyy"
       onScrollStep={(delta) => {
-        const nextIdx = focusIdx + delta
+        const currentIdx = items.findIndex((d) => sameUnit("year", d, props.focusDate))
+        const safeIdx = currentIdx >= 0 ? currentIdx : 0
+        const nextIdx = safeIdx + delta
+
         if (nextIdx >= 0 && nextIdx < items.length) {
           props.changeFocus(items[nextIdx])
           return true
@@ -25,8 +27,11 @@ export function YearLayer(props: YearLayerProps) {
         return false
       }}
       onBoundaryBreak={(dir) => {
+        const currentIdx = items.findIndex((d) => sameUnit("year", d, props.focusDate))
+        const safeIdx = currentIdx >= 0 ? currentIdx : 0
         const delta = dir === "down" ? 1 : -1
-        const nextIdx = focusIdx + delta
+        const nextIdx = safeIdx + delta
+
         if (nextIdx >= 0 && nextIdx < items.length) {
           props.changeFocus(items[nextIdx])
         }

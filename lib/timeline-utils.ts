@@ -25,6 +25,7 @@ import {
   isSameMonth,
   isSameWeek,
   isSameDay,
+  startOfHour,
 } from "date-fns"
 
 export type ZoomLevel = "year" | "month" | "week" | "day" | "hour"
@@ -116,7 +117,7 @@ export function normalizeToLevel(level: ZoomLevel, date: Date) {
     case "day":
       return startOfDay(date)
     case "hour":
-      return new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), 0, 0, 0)
+      return startOfHour(date)
   }
 }
 
