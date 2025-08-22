@@ -1,30 +1,33 @@
 # Finance Timeline Web App
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+Built with v0.dev
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/aandy03s-projects/v0-finance-timeline-web-app)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/3agqsjDm1vm)
+It was an idea I had. You may find it strange. But I like to experiment with how data can be visually shown. 
+The dashborad design it's kind of boring, although some designers do a great job.
 
-## Overview
+Unfinished project. [PROTOTYPE]
+DO NOT USE IT TO TRACK YOUR REAL TRANSACTIONS.
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+Works: 
+1. auth
+2. project timeline creation manager
+3. timeline redners based on start and end dates
+4. all shortcuts 
+5. inline transaction modal
+6. inline transaction indicators and their status indicators (1x - 3x)
+7. edge limit breaker when on layers (hour through month)
 
-## Deployment
+Obvious bugs:
+1. Transaction cards (4x - 5x)
+2. Others you will SURELY find with basic usage.
 
-Your project is live at:
+Not yet implemented:
+1. Multiple accounts/wallets
+2. Multi currency and exhange rate
+3. Background inline interactive charts (day to year)
+4. Inline summarizer (upward relative to timeline)
 
-**[https://vercel.com/aandy03s-projects/v0-finance-timeline-web-app](https://vercel.com/aandy03s-projects/v0-finance-timeline-web-app)**
+Enviroment:
+Building outside v0 env. can introduce some errors. 
 
-## Build your app
 
-Continue building your app on:
-
-**[https://v0.dev/chat/projects/3agqsjDm1vm](https://v0.dev/chat/projects/3agqsjDm1vm)**
-
-## How It Works
-
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
