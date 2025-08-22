@@ -5,7 +5,8 @@ Built with v0.dev
 It was an idea I had. You may find it strange. But I like to experiment with how data can be visually shown. 
 The dashborad design it's kind of boring, although some designers do a great job.
 
-Unfinished project. [PROTOTYPE]
+Unfinished project.
+Status: "out of personal funds" for it. [PROTOTYPE]
 DO NOT USE IT TO TRACK YOUR REAL TRANSACTIONS.
 
 Works: 
