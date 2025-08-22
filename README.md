@@ -1,6 +1,6 @@
 # MONX - Finance Tracker in timeline
 
-Built with v0.dev
+Built with v0.dev & Supabase.
 
 It was an idea I had. You may find it strange. But I like to experiment with how data can be visually shown. 
 The dashborad design it's kind of boring, although some designers do a great job.
@@ -27,6 +27,8 @@ Not yet implemented:
 2. Multi currency and exhange rate
 3. Background inline interactive charts (day to year)
 4. Inline summarizer (upward relative to timeline)
+
+Best use: mouse and keyboard.
 
 Enviroment:
 Building outside v0 env. can introduce some errors. 
