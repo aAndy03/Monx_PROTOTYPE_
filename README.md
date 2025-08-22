@@ -30,4 +30,4 @@ Not yet implemented:
 Enviroment:
 Building outside v0 env. can introduce some errors. 
 
-Free use with credit.
+Free use with credit if using this code. The ideea is free. :))
