@@ -33,11 +33,21 @@ export function CreateProjectModal({ open, onClose, onProjectCreated }: CreatePr
     const endDate = formData.get("endDate") as string
 
     try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        throw new Error("You must be logged in to create a project")
+      }
+
       const { error } = await supabase.from("projects").insert({
         name,
         description: description || null,
         start_date: startDate,
         end_date: endDate,
+        user_id: user.id, // Add user_id to satisfy RLS policy
       })
 
       if (error) throw error
