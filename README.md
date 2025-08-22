@@ -1,4 +1,4 @@
-# Finance Timeline Web App
+# MONX - Finance Tracker in timeline
 
 Built with v0.dev
 
