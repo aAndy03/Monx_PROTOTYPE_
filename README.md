@@ -1,6 +1,6 @@
 # MONX - Finance Tracker in timeline
 
-Built with v0.app & Supabase.
+Built with v0.app & Supabase & Shadcn.
 
 It was an idea I had. You may find it strange. But I like to experiment with how data can be visually shown. 
 The dashborad design it's kind of boring, although some designers do a great job.
